@@ -18,8 +18,25 @@ else:
 
 def register_search_tools(mcp: FastMCP) -> None:
     """Register search tools with MCP server."""
-    mcp.tool(description="Search ATX documentation using keyword search")(keyword_search)
-    mcp.tool(description="Search filtered by source (dev-guide, sdk, api)")(search_by_source)
+    mcp.tool(
+        description=(
+            "Search AWS Transform documentation using keyword matching. "
+            "Returns previews with source file paths (file/module) when available. "
+            "Tips: use class names (BaseAgent, HitlClient), API operation names "
+            "(RegisterAgent, DeployAgent), split compound queries into separate calls."
+        )
+    )(keyword_search)
+    mcp.tool(
+        description=(
+            "Search AWS Transform docs filtered by source. "
+            "Valid sources: dev-guide, sdk, agentic-api, registry-api, "
+            "hitl-sdk-python, hitl-sdk-java, hitl-component-library, "
+            "hitl-common-patterns, hitl-custom-components, hitl-validation, "
+            "hitl-generation-rules, hitl-agent-integration, hitl-architecture, "
+            "hitl-render-limitations. "
+            "Returns previews with source file paths (file/module) when available."
+        )
+    )(search_by_source)
     mcp.tool(
         description="Get complete HITL UI generation rules. Call before generating domTreeJson."
     )(get_hitl_generation_prompt)

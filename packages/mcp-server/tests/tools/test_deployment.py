@@ -14,6 +14,7 @@ from agent_builder_mcp.tools.deployment._deploy import (
 from agent_builder_mcp.tools.deployment._pipeline import (
     _check_logging_permissions,
     _get_default_execution_role_arn,
+    _register_with_atx,
     deploy_agent_full_pipeline,
 )
 
@@ -214,35 +215,23 @@ class TestDeployAgentToAgentCore:
 class TestGetDefaultExecutionRoleArn:
     """Test auto-detection of AgentCoreExecutionRole."""
 
-    def test_returns_arn_when_role_exists(self):
+    def test_returns_arn_when_sts_succeeds(self):
         """Test successful role detection returns ARN."""
         mock_sts = MagicMock()
         mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
 
-        mock_iam = MagicMock()
-        mock_iam.get_role.return_value = {"Role": {"RoleName": "AgentCoreExecutionRole"}}
-
-        def client_factory(service, **kwargs):
-            return {"sts": mock_sts, "iam": mock_iam}[service]
-
-        with patch(f"{MODULE_PIPELINE}.boto3.client", side_effect=client_factory):
-            result = _get_default_execution_role_arn(region="us-east-1")
+        with patch(f"{MODULE_PIPELINE}.boto3.client", return_value=mock_sts):
+            result = _get_default_execution_role_arn()
 
         assert result == "arn:aws:iam::123456789012:role/AgentCoreExecutionRole"
 
-    def test_returns_none_when_role_missing(self):
-        """Test returns None when role does not exist."""
+    def test_returns_none_when_sts_fails(self):
+        """Test returns None when STS call fails."""
         mock_sts = MagicMock()
-        mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
+        mock_sts.get_caller_identity.side_effect = Exception("ExpiredToken")
 
-        mock_iam = MagicMock()
-        mock_iam.get_role.side_effect = Exception("NoSuchEntity")
-
-        def client_factory(service, **kwargs):
-            return {"sts": mock_sts, "iam": mock_iam}[service]
-
-        with patch(f"{MODULE_PIPELINE}.boto3.client", side_effect=client_factory):
-            result = _get_default_execution_role_arn(region="us-east-1")
+        with patch(f"{MODULE_PIPELINE}.boto3.client", return_value=mock_sts):
+            result = _get_default_execution_role_arn()
 
         assert result is None
 
@@ -426,8 +415,8 @@ class TestDeployAgentFullPipeline:
                                 assert "deploy" in result["phases"]
                                 assert "register" in result["phases"]
 
-    def test_missing_logging_permissions_fails_pipeline(self, tmp_path):
-        """Test pipeline fails when AgentCoreExecutionRole is missing logging permissions."""
+    def test_missing_logging_permissions_warns_but_continues(self, tmp_path):
+        """Test pipeline warns but continues when permission pre-check reports missing permissions."""
         agent_dir = tmp_path / "agent"
         agent_dir.mkdir()
         (agent_dir / "Dockerfile").write_text("FROM scratch")
@@ -442,37 +431,57 @@ class TestDeployAgentFullPipeline:
                 }
             )
 
-            with patch(f"{MODULE_PIPELINE}._get_default_execution_role_arn") as mock_role:
-                mock_role.return_value = "arn:aws:iam::123456789012:role/AgentCoreExecutionRole"
+            with patch(f"{MODULE_PIPELINE}.deploy_agent_to_agentcore") as mock_deploy:
+                mock_deploy.return_value = json.dumps(
+                    {
+                        "success": True,
+                        "runtime_id": "test-runtime",
+                        "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:123:runtime/test",
+                        "runtime_name": "test_runtime",
+                        "status": "ACTIVE",
+                    }
+                )
 
-                with patch(f"{MODULE_PIPELINE}.boto3") as mock_boto3:
-                    mock_sts = MagicMock()
-                    mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
-                    mock_iam = MagicMock()
-                    mock_boto3.client.side_effect = lambda svc, **kw: (
-                        mock_sts if svc == "sts" else mock_iam
-                    )
+                with patch(f"{MODULE_PIPELINE}._get_default_execution_role_arn") as mock_role:
+                    mock_role.return_value = "arn:aws:iam::123456789012:role/AgentCoreExecutionRole"
 
-                    with patch(f"{MODULE_PIPELINE}._check_logging_permissions") as mock_check:
-                        mock_check.return_value = [
-                            "logs:DescribeLogStreams",
-                            "logs:DescribeLogGroups",
-                        ]
-
-                        result = json.loads(
-                            deploy_agent_full_pipeline(
-                                agent_path=str(agent_dir), agent_name="test-agent"
-                            )
+                    with patch(f"{MODULE_PIPELINE}.boto3") as mock_boto3:
+                        mock_sts = MagicMock()
+                        mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
+                        mock_iam = MagicMock()
+                        mock_boto3.client.side_effect = lambda svc, **kw: (
+                            mock_sts if svc == "sts" else mock_iam
                         )
 
-                        assert result["success"] is False
-                        assert result["phase"] == "deploy"
-                        assert result["error_type"] == "PermissionError"
-                        assert "logs:DescribeLogStreams" in result["error"]
-                        assert "logs:DescribeLogGroups" in result["error"]
-                        assert "NO LOGS" in result["error"]
-                        assert "DescribeLogStreams" in result["hint"]
-                        assert "DescribeLogGroups" in result["hint"]
+                        with patch(f"{MODULE_PIPELINE}._check_logging_permissions") as mock_check:
+                            mock_check.return_value = [
+                                "logs:DescribeLogStreams",
+                                "logs:DescribeLogGroups",
+                            ]
+
+                            with patch(
+                                f"{MODULE_PIPELINE}._get_default_access_role_arn"
+                            ) as mock_access:
+                                mock_access.return_value = "arn:aws:iam::123:role/AccessRole"
+
+                                with patch(f"{MODULE_PIPELINE}._register_with_atx") as mock_reg:
+                                    mock_reg.return_value = {
+                                        "success": True,
+                                        "agent_name": "test-agent",
+                                        "version": "1.0.0",
+                                    }
+
+                                    result = json.loads(
+                                        deploy_agent_full_pipeline(
+                                            agent_path=str(agent_dir),
+                                            agent_name="test-agent",
+                                        )
+                                    )
+
+                                    # Pipeline should proceed despite permission warning
+                                    assert result["success"] is True
+                                    # Deploy phase was called (not short-circuited)
+                                    mock_deploy.assert_called_once()
 
     def test_permission_check_exception_does_not_block(self, tmp_path):
         """Test pipeline continues if the permission check itself throws (e.g. AccessDenied on STS)."""
@@ -572,6 +581,298 @@ class TestDeployAgentFullPipeline:
 
                         assert result["success"] is True
                         assert result["phases"]["register"]["skipped"] is True
+
+    def test_access_role_autodetect_failure_skips_registration(self, tmp_path):
+        """Test that failed access role auto-detect skips registration but pipeline succeeds."""
+        agent_dir = tmp_path / "agent"
+        agent_dir.mkdir()
+        (agent_dir / "Dockerfile").write_text("FROM scratch")
+
+        with patch(f"{MODULE_PIPELINE}.build_agent_image") as mock_build:
+            mock_build.return_value = json.dumps(
+                {
+                    "success": True,
+                    "image_uri": "test-uri",
+                    "build_method": "finch",
+                    "ecr_repository": "test-repo",
+                }
+            )
+
+            with patch(f"{MODULE_PIPELINE}.deploy_agent_to_agentcore") as mock_deploy:
+                mock_deploy.return_value = json.dumps(
+                    {
+                        "success": True,
+                        "runtime_id": "test-runtime",
+                        "runtime_arn": "arn:aws:bedrock-agentcore:us-east-1:123:runtime/test",
+                        "runtime_name": "test_runtime",
+                        "status": "ACTIVE",
+                    }
+                )
+
+                with patch(f"{MODULE_PIPELINE}._get_default_execution_role_arn") as mock_exec_role:
+                    mock_exec_role.return_value = "arn:aws:iam::123:role/ExecRole"
+
+                    with patch(f"{MODULE_PIPELINE}._check_logging_permissions", return_value=[]):
+
+                        with patch(
+                            f"{MODULE_PIPELINE}._get_default_access_role_arn"
+                        ) as mock_access_role:
+                            mock_access_role.return_value = None
+
+                            with patch(f"{MODULE_PIPELINE}._register_with_atx") as mock_register:
+                                result = json.loads(
+                                    deploy_agent_full_pipeline(
+                                        agent_path=str(agent_dir),
+                                        agent_name="test-agent",
+                                    )
+                                )
+
+                                assert result["success"] is True
+                                assert result["phases"]["register"]["skipped"] is True
+                                assert "auto-detect" in result["phases"]["register"]["reason"]
+                                mock_register.assert_not_called()
+
+
+# --- _register_with_atx Unit Tests ---
+
+
+class TestRegisterWithAtx:
+    """Test _register_with_atx internal function directly.
+
+    Previous implementation used a lazy import of a non-existent module
+    (registry._register) that was always mocked away in pipeline tests,
+    hiding the ImportError until runtime. These tests exercise the real
+    function body to catch such regressions.
+    """
+
+    def test_imports_resolve(self):
+        """Verify _pipeline module imports resolve — catches dead imports at collection time.
+
+        The original bug was a lazy import of a non-existent module hidden inside
+        a try/except. Now that registry_client is a top-level import in _pipeline.py,
+        a broken import would fail at test collection. This test documents that contract.
+        """
+        from agent_builder_mcp.tools.deployment._pipeline import registry_client  # noqa: F401
+
+    def test_successful_registration(self):
+        """Test _register_with_atx executes all three steps with mocked client."""
+        mock_client = MagicMock()
+        mock_client.exceptions.ConflictException = type("ConflictException", (Exception,), {})
+
+        with patch(f"{MODULE_PIPELINE}.registry_client", return_value=mock_client):
+            with patch(f"{MODULE_PIPELINE}.boto3") as mock_boto3:
+                mock_sts = MagicMock()
+                mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
+                mock_boto3.client.return_value = mock_sts
+
+                result = _register_with_atx(
+                    agent_name="test-agent",
+                    agent_version="1.0.0",
+                    runtime_arn="arn:aws:bedrock-agentcore:us-east-1:123:runtime/test",
+                    access_role_arn="arn:aws:iam::123:role/AccessRole",
+                    registry_endpoint="https://test.endpoint",
+                )
+
+        assert result["success"] is True
+        assert result["agent_name"] == "test-agent"
+        mock_client.register_agent.assert_called_once()
+        mock_client.publish_agent_version.assert_called_once()
+        mock_client.update_publisher_access_control.assert_called_once()
+
+    def test_conflict_on_register_continues_to_publish(self):
+        """Test that ConflictException on register is handled gracefully."""
+        mock_client = MagicMock()
+        conflict_exc = type("ConflictException", (Exception,), {})
+        mock_client.exceptions.ConflictException = conflict_exc
+        mock_client.register_agent.side_effect = conflict_exc("already exists")
+
+        with patch(f"{MODULE_PIPELINE}.registry_client", return_value=mock_client):
+            with patch(f"{MODULE_PIPELINE}.boto3") as mock_boto3:
+                mock_sts = MagicMock()
+                mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
+                mock_boto3.client.return_value = mock_sts
+
+                result = _register_with_atx(
+                    agent_name="test-agent",
+                    agent_version="1.0.0",
+                    runtime_arn="arn:aws:bedrock-agentcore:us-east-1:123:runtime/test",
+                    access_role_arn="arn:aws:iam::123:role/AccessRole",
+                    registry_endpoint="https://test.endpoint",
+                )
+
+        assert result["success"] is True
+        # Still published despite register conflict
+        mock_client.publish_agent_version.assert_called_once()
+
+    def test_conflict_on_publish_continues_to_access_control(self):
+        """Test that ConflictException on publish is handled gracefully (re-deploy same version)."""
+        mock_client = MagicMock()
+        conflict_exc = type("ConflictException", (Exception,), {})
+        mock_client.exceptions.ConflictException = conflict_exc
+        mock_client.publish_agent_version.side_effect = conflict_exc("version already exists")
+
+        with patch(f"{MODULE_PIPELINE}.registry_client", return_value=mock_client):
+            with patch(f"{MODULE_PIPELINE}.boto3") as mock_boto3:
+                mock_sts = MagicMock()
+                mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
+                mock_boto3.client.return_value = mock_sts
+
+                result = _register_with_atx(
+                    agent_name="test-agent",
+                    agent_version="1.0.0",
+                    runtime_arn="arn:test",
+                    access_role_arn="arn:test",
+                    registry_endpoint="https://test",
+                )
+
+        assert result["success"] is True
+        mock_client.update_publisher_access_control.assert_called_once()
+
+    def test_orchestrator_metadata_included(self):
+        """Test that job_orchestrator=True includes jobOrchestratorMetadata."""
+        mock_client = MagicMock()
+        mock_client.exceptions.ConflictException = type("ConflictException", (Exception,), {})
+
+        with patch(f"{MODULE_PIPELINE}.registry_client", return_value=mock_client):
+            with patch(f"{MODULE_PIPELINE}.boto3") as mock_boto3:
+                mock_sts = MagicMock()
+                mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
+                mock_boto3.client.return_value = mock_sts
+
+                _register_with_atx(
+                    agent_name="test-orch",
+                    agent_version="1.0.0",
+                    runtime_arn="arn:test",
+                    access_role_arn="arn:test",
+                    registry_endpoint="https://test",
+                    job_orchestrator=True,
+                    chat_ui_label="Test Orchestrator",
+                    chat_agent_identifier="test-orch",
+                )
+
+        call_kwargs = mock_client.register_agent.call_args
+        metadata = call_kwargs.kwargs.get("metadata") or call_kwargs[1].get("metadata")
+        assert metadata["type"] == "ORCHESTRATOR_AGENT"
+        assert metadata["jobOrchestrator"] is True
+        assert metadata["jobOrchestratorMetadata"]["chatUILabel"] == "Test Orchestrator"
+
+    def test_agent_card_populated(self):
+        """Test that agentCard is populated with agent identity and required extensions."""
+        mock_client = MagicMock()
+        mock_client.exceptions.ConflictException = type("ConflictException", (Exception,), {})
+
+        with patch(f"{MODULE_PIPELINE}.registry_client", return_value=mock_client):
+            with patch(f"{MODULE_PIPELINE}.boto3") as mock_boto3:
+                mock_sts = MagicMock()
+                mock_sts.get_caller_identity.return_value = {"Account": "111122223333"}
+                mock_boto3.client.return_value = mock_sts
+
+                _register_with_atx(
+                    agent_name="test-agent",
+                    agent_version="2.0.0",
+                    runtime_arn="arn:test",
+                    access_role_arn="arn:test",
+                    registry_endpoint="https://test",
+                )
+
+        call_kwargs = mock_client.publish_agent_version.call_args
+        config = call_kwargs.kwargs.get("configuration") or call_kwargs[1].get("configuration")
+        card = config["agentCard"]
+
+        assert card["id"] == "test-agent"
+        assert card["name"] == "test-agent"
+        assert card["version"] == "2.0.0"
+
+        # accountId populated from STS
+        provider = card["capabilities"]["extensions"][0]
+        assert provider["name"] == "Agent Provider"
+        assert provider["params"]["accountId"] == "111122223333"
+
+        # All three required extensions present
+        ext_names = [e["name"] for e in card["capabilities"]["extensions"]]
+        assert ext_names == ["Agent Provider", "Agent Dependencies", "Agent Connectors"]
+
+    def test_access_control_conflict_is_non_fatal(self):
+        """Test that ConflictException on access control is non-fatal (already enabled)."""
+        mock_client = MagicMock()
+        conflict_exc = type("ConflictException", (Exception,), {})
+        mock_client.exceptions.ConflictException = conflict_exc
+        mock_client.update_publisher_access_control.side_effect = conflict_exc("already enabled")
+
+        with patch(f"{MODULE_PIPELINE}.registry_client", return_value=mock_client):
+            with patch(f"{MODULE_PIPELINE}.boto3") as mock_boto3:
+                mock_sts = MagicMock()
+                mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
+                mock_boto3.client.return_value = mock_sts
+
+                result = _register_with_atx(
+                    agent_name="test-agent",
+                    agent_version="1.0.0",
+                    runtime_arn="arn:test",
+                    access_role_arn="arn:test",
+                    registry_endpoint="https://test",
+                )
+
+        assert result["success"] is True
+
+    def test_access_control_validation_error_is_fatal(self):
+        """Test that ValidationException on access control propagates as failure.
+
+        Unlike ConflictException, ValidationException (e.g. allowlist at capacity)
+        means the agent is registered but no account can use it.
+        """
+        mock_client = MagicMock()
+        mock_client.exceptions.ConflictException = type("ConflictException", (Exception,), {})
+        mock_client.update_publisher_access_control.side_effect = Exception(
+            "ValidationException: allowlist at capacity"
+        )
+
+        with patch(f"{MODULE_PIPELINE}.registry_client", return_value=mock_client):
+            with patch(f"{MODULE_PIPELINE}.boto3") as mock_boto3:
+                mock_sts = MagicMock()
+                mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
+                mock_boto3.client.return_value = mock_sts
+
+                result = _register_with_atx(
+                    agent_name="test-agent",
+                    agent_version="1.0.0",
+                    runtime_arn="arn:test",
+                    access_role_arn="arn:test",
+                    registry_endpoint="https://test",
+                )
+
+        assert result["success"] is False
+        assert "ValidationException" in result["error"]
+
+    def test_compute_configuration_includes_arns(self):
+        """Test that computeConfiguration includes runtimeArn and atxAccessRoleArn."""
+        mock_client = MagicMock()
+        mock_client.exceptions.ConflictException = type("ConflictException", (Exception,), {})
+
+        with patch(f"{MODULE_PIPELINE}.registry_client", return_value=mock_client):
+            with patch(f"{MODULE_PIPELINE}.boto3") as mock_boto3:
+                mock_sts = MagicMock()
+                mock_sts.get_caller_identity.return_value = {"Account": "123456789012"}
+                mock_boto3.client.return_value = mock_sts
+
+                _register_with_atx(
+                    agent_name="test-agent",
+                    agent_version="1.0.0",
+                    runtime_arn="arn:aws:bedrock-agentcore:us-east-1:123:runtime/test",
+                    access_role_arn="arn:aws:iam::123:role/AccessRole",
+                    registry_endpoint="https://test",
+                )
+
+        call_kwargs = mock_client.publish_agent_version.call_args
+        config = call_kwargs.kwargs.get("configuration") or call_kwargs[1].get("configuration")
+        ac = config["computeConfiguration"]["provisionedComputeConfiguration"]["agentCoreConfiguration"]
+        assert ac["runtimeArn"] == "arn:aws:bedrock-agentcore:us-east-1:123:runtime/test"
+        assert ac["atxAccessRoleArn"] == "arn:aws:iam::123:role/AccessRole"
+
+        # Required schema and prompt fields
+        assert config["inputPayloadSchema"] == {}
+        assert config["outputPayloadSchema"] == {}
+        assert config["objectiveNegotiationPrompt"] == ""
 
 
 # --- MCP Registration Tests ---

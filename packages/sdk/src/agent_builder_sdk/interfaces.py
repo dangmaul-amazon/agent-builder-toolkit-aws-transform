@@ -1,5 +1,5 @@
 """
-Core interfaces for the ElasticGumby Platform Base Agent package.
+Core interfaces for the Agent Builder SDK package.
 
 This module defines the fundamental protocols and interfaces that all agents
 must implement to work with the platform infrastructure.

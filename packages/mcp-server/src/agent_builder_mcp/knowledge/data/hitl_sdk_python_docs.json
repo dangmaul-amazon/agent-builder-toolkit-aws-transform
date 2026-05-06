@@ -117,7 +117,7 @@
     "name": "HitlTaskStatus",
     "kind": "enum",
     "module": "elastic_gumby_hitl_component_python_sdk",
-    "description": "HITL task status values matching the ElasticGumby Agentic API. Inherits from str and Enum.",
+    "description": "HITL task status values matching the AWS Transform Agentic API. Inherits from str and Enum.",
     "values": [
       {"name": "CREATED", "value": "CREATED", "description": "Task has been created but not yet started"},
       {"name": "AWAITING_HUMAN_INPUT", "value": "AWAITING_HUMAN_INPUT", "description": "Task is waiting for the human to interact"},

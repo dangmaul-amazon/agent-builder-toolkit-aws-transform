@@ -28,12 +28,14 @@ REGION_TO_AIRPORT_CODE = {
 def registry_client(
     stage: str | None = None,
     region: str | None = None,
+    endpoint_url: str | None = None,
 ) -> Any:
     """Create ATX Agent Registry client.
 
     Args:
         stage: Deployment stage (default: from ATX_STAGE env var or "prod")
         region: AWS region (default: from AWS_REGION env var or "us-east-1")
+        endpoint_url: Explicit endpoint URL override (default: derived from region + stage)
 
     Returns:
         Configured boto3 client
@@ -41,16 +43,16 @@ def registry_client(
     region = region or os.environ.get("AWS_REGION") or "us-east-1"
     stage = stage or os.environ.get("ATX_STAGE") or "prod"
 
-    airport_code = REGION_TO_AIRPORT_CODE.get(region)
-    if not airport_code:
-        raise ValueError(
-            f'Unsupported region "{region}". Supported: {", ".join(REGION_TO_AIRPORT_CODE.keys())}'
+    if not endpoint_url:
+        airport_code = REGION_TO_AIRPORT_CODE.get(region)
+        if not airport_code:
+            raise ValueError(
+                f'Unsupported region "{region}". Supported: {", ".join(REGION_TO_AIRPORT_CODE.keys())}'
+            )
+        endpoint_url = os.environ.get(
+            "ATX_REGISTRY_ENDPOINT",
+            f"https://{airport_code}.{stage}.agent-registry-external.elastic-gumby.ai.aws.dev",
         )
-
-    endpoint_url = os.environ.get(
-        "ATX_REGISTRY_ENDPOINT",
-        f"https://{airport_code}.{stage}.agent-registry-external.elastic-gumby.ai.aws.dev",
-    )
 
     return boto3.client(
         SERVICE_NAME,

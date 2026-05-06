@@ -15,6 +15,7 @@ class NotificationType(Enum):
     AGENT_STATUS_CHANGE = "AgentStatusChangeNotification"
     HITL_TASK_STATUS_CHANGE = "HitlTaskStatusChangeNotification"
     JOB_STATUS_CHANGE = "JobStatusChangeNotification"
+    JOB_DELETION = "JobDeletionNotification"
     ORCH_AGENT_STOP_EVENT = "OrchAgentStopEvent"
 
 
@@ -90,6 +91,15 @@ class OrchAgentStopEventDetail(NotificationDetail):
 
 
 @dataclass
+class JobDeletionDetail(NotificationDetail):
+    """Detail for JobDeletionNotification type."""
+
+    job_id: str
+    workspace_id: str
+    deletion_acknowledgement_token: str
+
+
+@dataclass
 class Notification:
     """Base notification structure. https://tiny.amazon.com/rkt22k12/ElasticGumbyInvocationServiceModel/mainline/common.smithy#L134"""
 
@@ -113,6 +123,7 @@ class Notification:
             JobStatusChangeDetail,
             AgentStatusChangeDetail,
             OrchAgentStopEventDetail,
+            JobDeletionDetail,
         ]
         if notification_type == NotificationType.HITL_TASK_STATUS_CHANGE:
             detail = HitlTaskStatusChangeDetail(
@@ -137,6 +148,12 @@ class Notification:
                 job_id=detail_data["jobId"],
                 orch_agent_instance_id=detail_data["orchAgentInstanceId"],
                 new_status=AgentInstanceStatus(detail_data["newStatus"]),
+            )
+        elif notification_type == NotificationType.JOB_DELETION:
+            detail = JobDeletionDetail(
+                job_id=detail_data["jobId"],
+                workspace_id=detail_data["workspaceId"],
+                deletion_acknowledgement_token=detail_data["deletionAcknowledgementToken"],
             )
         else:
             raise ValueError(f"Unsupported notification type: {notification_type}")

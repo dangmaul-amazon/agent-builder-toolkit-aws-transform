@@ -11,8 +11,12 @@ def reset_globals():
     from agent_builder_mcp.knowledge import _lite
 
     _lite._documents = None
+    _lite._bm25 = None
+    _lite._tokenized_corpus = None
     yield
     _lite._documents = None
+    _lite._bm25 = None
+    _lite._tokenized_corpus = None
 
 
 class TestChunkText:
@@ -22,7 +26,7 @@ class TestChunkText:
         from agent_builder_mcp.knowledge._lite import _chunk_text
 
         text = " ".join(f"word{i}" for i in range(100))
-        chunks = _chunk_text(text, chunk_size=30)
+        chunks = _chunk_text(text, chunk_size=30, overlap=0)
         assert len(chunks) == 4
 
     def test_chunk_text_single_chunk(self) -> None:

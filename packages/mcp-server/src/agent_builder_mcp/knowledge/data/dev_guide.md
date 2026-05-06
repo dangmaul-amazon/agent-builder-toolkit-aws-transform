@@ -728,11 +728,11 @@ import argparse
 
 import logging
 
-from eg_platform_base_agent.agent_factory import create_default_orchestrator_with_subagent
+from agent_builder_sdk.agent_factory import create_default_orchestrator_with_subagent
 
-from eg_platform_base_agent.server.agent_runtime_server import AgentRuntimeServer
+from agent_builder_sdk.server.agent_runtime_server import AgentRuntimeServer
 
-from eg_platform_base_agent.utils import get_prompt_with_name
+from agent_builder_sdk.utils import get_prompt_with_name
 
 # Configure logging
 
@@ -1102,7 +1102,7 @@ ECR_REPO=my-orch-agent
 
 AWS_REGION=us-east-1
 
-AWS_ACCOUNT_ID=123456789012
+AWS_ACCOUNT_ID=XXXXXXXXXXXX
 
 Wrap up all the local changes and rebuild the local docker container image with platform ARM since agent core only support ARM platform so far.
 
@@ -1155,27 +1155,27 @@ Resources:
                   - ecr:BatchGetImage
                   - ecr:GetDownloadUrlForLayer
                 Resource:
-                  - "arn:aws:ecr:us-east-1:123456789012:repository/*"
+                  - "arn:aws:ecr:us-east-1:XXXXXXXXXXXX:repository/*"
 
               - Effect: Allow
                 Action:
                   - logs:DescribeLogStreams
                   - logs:CreateLogGroup
                 Resource:
-                  - "arn:aws:logs:us-east-1:123456789012:log-group:/aws/bedrock-agentcore/runtimes/*"
+                  - "arn:aws:logs:us-east-1:XXXXXXXXXXXX:log-group:/aws/bedrock-agentcore/runtimes/*"
 
               - Effect: Allow
                 Action:
                   - logs:DescribeLogGroups
                 Resource:
-                  - "arn:aws:logs:us-east-1:123456789012:log-group:*"
+                  - "arn:aws:logs:us-east-1:XXXXXXXXXXXX:log-group:*"
 
               - Effect: Allow
                 Action:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
-                  - "arn:aws:logs:us-east-1:123456789012:log-group:/aws/bedrock-agentcore/runtimes/*:log-stream:*"
+                  - "arn:aws:logs:us-east-1:XXXXXXXXXXXX:log-group:/aws/bedrock-agentcore/runtimes/*:log-stream:*"
 
               - Sid: ECRTokenAccess
                 Effect: Allow
@@ -1206,8 +1206,8 @@ Resources:
                   - bedrock-agentcore:GetWorkloadAccessTokenForJWT
                   - bedrock-agentcore:GetWorkloadAccessTokenForUserId
                 Resource:
-                  - arn:aws:bedrock-agentcore:us-east-1:123456789012:workload-identity-directory/default
-                  - arn:aws:bedrock-agentcore:us-east-1:123456789012:workload-identity-directory/default/workload-identity/agentName-*
+                  - arn:aws:bedrock-agentcore:us-east-1:XXXXXXXXXXXX:workload-identity-directory/default
+                  - arn:aws:bedrock-agentcore:us-east-1:XXXXXXXXXXXX:workload-identity-directory/default/workload-identity/agentName-*
 
               - Sid: BedrockModelInvocation
                 Effect: Allow
@@ -1216,7 +1216,7 @@ Resources:
                   - bedrock:InvokeModelWithResponseStream
                 Resource:
                   - "arn:aws:bedrock:*::foundation-model/*"
-                  - "arn:aws:bedrock:us-east-1:123456789012:*"
+                  - "arn:aws:bedrock:us-east-1:XXXXXXXXXXXX:*"
 
               - Sid: ATXPlatformInvocation
                 Effect: Allow
@@ -1908,7 +1908,7 @@ ${FES_ENDPOINT}
 
 You will expect the log message in your agent like:
 
-2025-09-18 08:35:56,617 - eg_platform_base_agent.server.agent_runtime_server - INFO - Received invocation for request: {'jsonrpc': '2.0', 'method': 'message/send', 'params': {'message': {'extensions': ['ATX_A2A.SourceInformation', 'https://aws.com/transform/ext/source_information/v1', 'ATX_A2A.AgentInitializationContext'], 'metadata': {'https://aws.com/transform/ext/source_information/v1': {'senderAgentInstanceId': 'ATX_CHAT', 'onBehalfOfUser': '94886488-8081-7043-77fd-388afdba955e'}, 'ATX_A2A.AgentInitializationContext': {'authorizationToken': -----', 'tokenExpiration': 1758227755625, 'jobMetadata': {'jobId': '5c20949f-498b-4030-86fe-4dd80099960f', 'workspaceId': 'e0fe7ddc-db8b-4c10-bbc3-ae56d3fe8fd4'}, 'agentInstanceId': '4cd63992-7053-4c13-bafe-d5b7c6f32cc3'}, 'ATX_A2A.SourceInformation': {'senderAgentInstanceId': 'ATX_CHAT', 'onBehalfOfUser': '94886488-8081-7043-77fd-388afdba955e'}}, 'role': 'user', 'kind': 'message', 'parts': [{'kind': 'text', 'text': 'Can you create a job plan with one single job step - like my first job step?'}], 'messageId': '431b0192-bd5c-4be2-b38e-9df6982659a0', 'contextId': 'bf19a558-18e5-41e1-b013-36442981dd2c'}}, 'id': '31638206-6703-4ec2-8148-758f034ab99e'}
+2025-09-18 08:35:56,617 - agent_builder_sdk.server.agent_runtime_server - INFO - Received invocation for request: {'jsonrpc': '2.0', 'method': 'message/send', 'params': {'message': {'extensions': ['ATX_A2A.SourceInformation', 'https://aws.com/transform/ext/source_information/v1', 'ATX_A2A.AgentInitializationContext'], 'metadata': {'https://aws.com/transform/ext/source_information/v1': {'senderAgentInstanceId': 'ATX_CHAT', 'onBehalfOfUser': '94886488-8081-7043-77fd-388afdba955e'}, 'ATX_A2A.AgentInitializationContext': {'authorizationToken': -----', 'tokenExpiration': 1758227755625, 'jobMetadata': {'jobId': '5c20949f-498b-4030-86fe-4dd80099960f', 'workspaceId': 'e0fe7ddc-db8b-4c10-bbc3-ae56d3fe8fd4'}, 'agentInstanceId': '4cd63992-7053-4c13-bafe-d5b7c6f32cc3'}, 'ATX_A2A.SourceInformation': {'senderAgentInstanceId': 'ATX_CHAT', 'onBehalfOfUser': '94886488-8081-7043-77fd-388afdba955e'}}, 'role': 'user', 'kind': 'message', 'parts': [{'kind': 'text', 'text': 'Can you create a job plan with one single job step - like my first job step?'}], 'messageId': '431b0192-bd5c-4be2-b38e-9df6982659a0', 'contextId': 'bf19a558-18e5-41e1-b013-36442981dd2c'}}, 'id': '31638206-6703-4ec2-8148-758f034ab99e'}
 
 …
 
@@ -1938,7 +1938,7 @@ ${FES_ENDPOINT}
 
 You will expect the log message in your agent like:
 
-2025-09-18 08:36:45,193 - eg_platform_base_agent.server.agent_runtime_server - INFO - Received invocation for request: {'jsonrpc': '2.0', 'method': 'message/send', 'params': {'message': {'extensions': ['ATX_A2A.SourceInformation', 'https://aws.com/transform/ext/source_information/v1', 'ATX_A2A.AgentInitializationContext'], 'metadata': {'https://aws.com/transform/ext/source_information/v1': {'senderAgentInstanceId': 'ATX_CHAT', 'onBehalfOfUser': '94886488-8081-7043-77fd-388afdba955e'}, 'ATX_A2A.AgentInitializationContext': {'authorizationToken': '---, 'tokenExpiration': 1758227803940, 'jobMetadata': {'jobId': '5c20949f-498b-4030-86fe-4dd80099960f', 'workspaceId': 'e0fe7ddc-db8b-4c10-bbc3-ae56d3fe8fd4'}, 'agentInstanceId': '4cd63992-7053-4c13-bafe-d5b7c6f32cc3'}, 'ATX_A2A.SourceInformation': {'senderAgentInstanceId': 'ATX_CHAT', 'onBehalfOfUser': '94886488-8081-7043-77fd-388afdba955e'}}, 'role': 'user', 'kind': 'message', 'parts': [{'kind': 'text', 'text': 'Can you create an autoform HITL task with 2 text fields to ask user to provide first name and last name? The HITL task must attach to the job step which we created in the past (Step ID: 0001-3ed0b1dc-2281-4674-8c61-33809406977a).'}], 'messageId': 'ceb88562-dae6-4b07-a98e-342cc807733e', 'contextId': '0238b724-4e85-4224-b5ba-e7ebcc43361c'}}, 'id': '193ca901-a73b-416d-9f6f-f2df5ba872f0'}
+2025-09-18 08:36:45,193 - agent_builder_sdk.server.agent_runtime_server - INFO - Received invocation for request: {'jsonrpc': '2.0', 'method': 'message/send', 'params': {'message': {'extensions': ['ATX_A2A.SourceInformation', 'https://aws.com/transform/ext/source_information/v1', 'ATX_A2A.AgentInitializationContext'], 'metadata': {'https://aws.com/transform/ext/source_information/v1': {'senderAgentInstanceId': 'ATX_CHAT', 'onBehalfOfUser': '94886488-8081-7043-77fd-388afdba955e'}, 'ATX_A2A.AgentInitializationContext': {'authorizationToken': '---, 'tokenExpiration': 1758227803940, 'jobMetadata': {'jobId': '5c20949f-498b-4030-86fe-4dd80099960f', 'workspaceId': 'e0fe7ddc-db8b-4c10-bbc3-ae56d3fe8fd4'}, 'agentInstanceId': '4cd63992-7053-4c13-bafe-d5b7c6f32cc3'}, 'ATX_A2A.SourceInformation': {'senderAgentInstanceId': 'ATX_CHAT', 'onBehalfOfUser': '94886488-8081-7043-77fd-388afdba955e'}}, 'role': 'user', 'kind': 'message', 'parts': [{'kind': 'text', 'text': 'Can you create an autoform HITL task with 2 text fields to ask user to provide first name and last name? The HITL task must attach to the job step which we created in the past (Step ID: 0001-3ed0b1dc-2281-4674-8c61-33809406977a).'}], 'messageId': 'ceb88562-dae6-4b07-a98e-342cc807733e', 'contextId': '0238b724-4e85-4224-b5ba-e7ebcc43361c'}}, 'id': '193ca901-a73b-416d-9f6f-f2df5ba872f0'}
 
 …
 
@@ -2047,7 +2047,7 @@ ${FES_ENDPOINT}
 
 You will expect the log message in your agent like:
 
-2025-09-18 08:37:55,360 - eg_platform_base_agent.server.agent_runtime_server - INFO - Received invocation for request: {'jsonrpc': '2.0', 'method': 'atx_agent/notify', 'params': {'jobMetadata': {'jobId': '5c20949f-498b-4030-86fe-4dd80099960f', 'workspaceId': 'e0fe7ddc-db8b-4c10-bbc3-ae56d3fe8fd4'}, 'agentInstanceId': '4cd63992-7053-4c13-bafe-d5b7c6f32cc3', 'notification': {'type': 'HitlTaskStatusChangeNotification', 'detail': '{"hitlTaskId":"0e69c80a-4be7-451f-869f-364d28a1d2e1","oldStatus":"IN_PROGRESS","newStatus":"SUBMITTED"}'}, 'authorizationToken': ---', 'tokenExpiration': 1758227875036}, 'id': None}
+2025-09-18 08:37:55,360 - agent_builder_sdk.server.agent_runtime_server - INFO - Received invocation for request: {'jsonrpc': '2.0', 'method': 'atx_agent/notify', 'params': {'jobMetadata': {'jobId': '5c20949f-498b-4030-86fe-4dd80099960f', 'workspaceId': 'e0fe7ddc-db8b-4c10-bbc3-ae56d3fe8fd4'}, 'agentInstanceId': '4cd63992-7053-4c13-bafe-d5b7c6f32cc3', 'notification': {'type': 'HitlTaskStatusChangeNotification', 'detail': '{"hitlTaskId":"0e69c80a-4be7-451f-869f-364d28a1d2e1","oldStatus":"IN_PROGRESS","newStatus":"SUBMITTED"}'}, 'authorizationToken': ---', 'tokenExpiration': 1758227875036}, 'id': None}
 
 …
 
@@ -3019,7 +3019,7 @@ Obtain your Corporate CA Certificate: Request the certificate file (e.g., corp
 
 Combine the bundles: Follow steps 2 and 3 from Solution 1 to create a combined certificate bundle.
 
-Update proxies and proxies_config in dependencies/ElasticGumbyPlatformPartnerBaseAgent/src/eg_platform_base_agent/agentic_framework/client_factory.py to use corporate proxy
+Update proxies and proxies_config in dependencies/ElasticGumbyPlatformPartnerBaseAgent/src/agent_builder_sdk/agentic_framework/client_factory.py to use corporate proxy
 
 Re-install ATX dependencies via pip3 install -r requirements.txt with modified code
 
@@ -3103,7 +3103,7 @@ def create_agentic_api_client(
 
 For local testing or in a controlled development environment, you can instruct Boto3 to skip SSL certificate validation entirely by setting verify=False when creating the client. 
 
-Update verify option in dependencies/ElasticGumbyPlatformPartnerBaseAgent/src/eg_platform_base_agent/agentic_framework/client_factory.py to use corporate proxy
+Update verify option in dependencies/ElasticGumbyPlatformPartnerBaseAgent/src/agent_builder_sdk/agentic_framework/client_factory.py to use corporate proxy
 
 Re-install ATX dependencies via pip3 install -r requirements.txt with modified code
 
@@ -3536,7 +3536,7 @@ Python version: Configure your version set with recommended Python 3.11. Python 
 
 # In your agent package (e.g., MyCustomAgent)
 
-from eg_platform_base_agent.orchestrator_strands.base_orchestrator import AsyncBaseOrchestrator
+from agent_builder_sdk.orchestrator_strands.base_orchestrator import AsyncBaseOrchestrator
 
 class MyCustomOrchestrator(AsyncBaseOrchestrator):
 
@@ -3591,9 +3591,9 @@ Implementation:
 
 # my_agent_cli.py
 
-from eg_platform_base_agent.server.agent_runtime_server import AgentRuntimeServer
+from agent_builder_sdk.server.agent_runtime_server import AgentRuntimeServer
 
-from eg_platform_base_agent.agent_factory import create_default_orchestrator
+from agent_builder_sdk.agent_factory import create_default_orchestrator
 
 def main():
 
@@ -3757,7 +3757,7 @@ python src/my_custom_agent/my_orchestrator_cli.py \
 
 # In your agent package (e.g., MyCustomSubagent)
 
-from eg_platform_base_agent.base_subagent.base_subagent import AsyncBaseSubagent
+from agent_builder_sdk.base_subagent.base_subagent import AsyncBaseSubagent
 
 class MyCustomSubagent(AsyncBaseSubagent):
 
@@ -3809,9 +3809,9 @@ Note: You can also use AgentRuntimeServer for subagents if you need persistent
 
 # my_subagent_cli.py
 
-from eg_platform_base_agent.server.stateless_agent_runtime_server import StatelessAgentRuntimeServer
+from agent_builder_sdk.server.stateless_agent_runtime_server import StatelessAgentRuntimeServer
 
-from eg_platform_base_agent.agent_factory import create_default_subagent
+from agent_builder_sdk.agent_factory import create_default_subagent
 
 def main():
 

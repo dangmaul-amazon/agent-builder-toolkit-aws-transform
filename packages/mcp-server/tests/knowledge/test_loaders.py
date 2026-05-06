@@ -1,10 +1,4 @@
-"""Unit tests for document loaders.
-
-Note: loaders.py imports llama_index.core.Document at module level, which is an
-optional dependency not available in the Brazil test environment. We mock it at
-sys.modules level before importing the loaders module. This is a workaround until
-loaders.py is refactored to use lazy imports.
-"""
+"""Unit tests for document loaders."""
 
 import json
 import sys
