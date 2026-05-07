@@ -10,7 +10,7 @@ from typing import Optional
 import boto3
 from botocore.client import BaseClient
 from botocore.config import Config as BotocoreConfig
-from mypy_boto3_elasticgumbyagenticservice import ElasticgumbyagenticserviceClient
+from agent_builder_types import TransformAgenticServiceClient
 
 from agent_builder_sdk.env_var import is_external_agentic_api_enabled
 from agent_builder_sdk.utils import ElasticGumbyEndpointConfig
@@ -25,7 +25,7 @@ ATX_EXTERNAL_AGENTIC_API_SERVICE_NAME = "transformagenticservice"
 
 
 @functools.lru_cache(maxsize=1)
-def get_agentic_api_client() -> ElasticgumbyagenticserviceClient:
+def get_agentic_api_client() -> TransformAgenticServiceClient:
     """Get cached agentic API client."""
     return create_agentic_api_client()
 
@@ -38,7 +38,7 @@ def create_agentic_api_client(
     timeout: int = 30,
 ) -> BaseClient:
     """
-    Create boto3 client for ElasticGumbyAgenticAPI.
+    Create boto3 client for AWS Transform Agentic API.
 
     Args:
         stage: Environment stage (defaults to env var)
@@ -74,7 +74,7 @@ def _build_agentic_api_client(
     region: Optional[str] = None,
     endpoint_url: Optional[str] = None,
     boto_config: Optional[BotocoreConfig] = None,
-) -> ElasticgumbyagenticserviceClient:
+) -> TransformAgenticServiceClient:
 
     if endpoint_url:
         return boto3.client(
