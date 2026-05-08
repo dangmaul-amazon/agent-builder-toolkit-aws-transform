@@ -31,8 +31,10 @@ def main() -> None:
     Main CLI entrypoint.
     """
     if "--version" in sys.argv:
-        return print_version()
+        print_version()
+        return
     print_info()
+    return
 
 
 if __name__ == "__main__":
