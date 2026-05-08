@@ -232,7 +232,7 @@ def extract_text_from_strands_agent_response(response: AgentResult) -> str:
 
 class TransformEndpointConfig:
     """
-    Configuration utility for Elastic Gumby endpoints and region mappings.
+    Configuration utility for AWS Transform endpoints and region mappings.
     """
 
     @staticmethod
@@ -283,7 +283,7 @@ class TransformEndpointConfig:
     @staticmethod
     def create_endpoint_url(stage: str, region: str, component_name: str) -> str:
         """
-        Creates the endpoint URL for Elastic Gumby services.
+        Creates the endpoint URL for AWS Transform services.
 
         Args:
             stage: Environment stage (e.g., 'prod', 'beta', 'gamma')

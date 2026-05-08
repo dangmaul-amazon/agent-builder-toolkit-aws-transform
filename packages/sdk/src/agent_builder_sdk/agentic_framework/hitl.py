@@ -9,7 +9,7 @@ from agent_builder_sdk.agentic_framework.agentic_api_helper import AgenticApiHel
 
 
 class HitlClient(AgenticApiHelper):
-    """A wrapper around Elastic Gumby's HITL (human-in-the-loop) APIs."""
+    """A wrapper around AWS Transform's HITL (human-in-the-loop) APIs."""
 
     client: TransformAgenticServiceClient
 

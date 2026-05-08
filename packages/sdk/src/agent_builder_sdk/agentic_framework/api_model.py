@@ -53,7 +53,7 @@ class ApiShapeMixin(Generic[T]):
 @dataclass(frozen=True)
 class AgenticApiRequestContext(ApiShapeMixin[abt.RequestContextTypeDef]):
     """
-    Request context for Elastic Gumby Agentic API calls.
+    Request context for AWS Transform Agentic API calls.
     Contains job metadata and agent identification information.
     """
 
