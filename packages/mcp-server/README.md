@@ -1,4 +1,5 @@
 # Agent Builder MCP Server
+# Agent Builder MCP Server
 
 An [MCP](https://modelcontextprotocol.io/) server that gives [Kiro](https://kiro.dev/) the tools and knowledge it needs to build, deploy, and manage agents on [AWS Transform](https://aws.amazon.com/transform/).
 
@@ -46,7 +47,7 @@ Ask Kiro "what agent-builder tools do you have?" and it will list the exact set 
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.11+
 - AWS credentials configured (standard `boto3` credential chain) for deployment, diagnosis, and CloudWatch tools. Search and validation work offline.
 
 ## License

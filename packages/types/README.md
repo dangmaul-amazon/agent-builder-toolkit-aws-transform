@@ -36,7 +36,7 @@ response: GetAgentInstanceResponseTypeDef = client.get_agent_instance(...)
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.11+
 - `boto3 >= 1.28`
 
 ## License

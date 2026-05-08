@@ -143,7 +143,7 @@ if __name__ == "__main__":
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.11+
 - AWS credentials configured (standard `boto3` credential chain), with Bedrock access for model inference
 - The `agent-builder-mcp` binary on disk — see [agent-builder-mcp-aws-transform](https://pypi.org/project/agent-builder-mcp-aws-transform/)
 
