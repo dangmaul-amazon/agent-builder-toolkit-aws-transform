@@ -10,11 +10,10 @@ def print_info() -> None:
     Print package info to stdout.
     """
     print(
-        "Type annotations for boto3.Elasticgumbyagenticservice 1.42.95\n"
+        "Type annotations for boto3.TransformAgenticService 1.42.95\n"
         "Version:         1.42.95\n"
         "Builder version: 4.22.1\n"
-        "Docs:            https://pypi.org/project/mypy-boto3-elasticgumbyagenticservice/\n"
-        "Boto3 docs:      https://boto3.amazonaws.com/v1/documentation/api/1.42.95/reference/services/elasticgumbyagenticservice.html#Elasticgumbyagenticservice\n"
+        "Docs:            https://pypi.org/project/agent-builder-types/\n"
         "Other services:  https://pypi.org/project/boto3-stubs/\n"
         "Changelog:       https://github.com/vemel/mypy_boto3_builder/releases"
     )

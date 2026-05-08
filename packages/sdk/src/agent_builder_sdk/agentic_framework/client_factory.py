@@ -13,7 +13,7 @@ from botocore.config import Config as BotocoreConfig
 from agent_builder_types import TransformAgenticServiceClient
 
 from agent_builder_sdk.env_var import is_external_agentic_api_enabled
-from agent_builder_sdk.utils import ElasticGumbyEndpointConfig
+from agent_builder_sdk.utils import TransformEndpointConfig
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ def _build_agentic_api_client(
             config=boto_config,
         )
     else:
-        constructed_endpoint_url = ElasticGumbyEndpointConfig.create_endpoint_url(
+        constructed_endpoint_url = TransformEndpointConfig.create_endpoint_url(
             str(stage), str(region), ATX_AGENTIC_API_COMPONENT_NAME
         )
         return boto3.client(
@@ -111,7 +111,7 @@ def _build_external_agentic_api_client(
         )
     else:
         constructed_endpoint_url = (
-            ElasticGumbyEndpointConfig.create_external_agenticapi_endpoint_url(
+            TransformEndpointConfig.create_external_agenticapi_endpoint_url(
                 str(stage), str(region)
             )
         )

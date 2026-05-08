@@ -230,7 +230,7 @@ def extract_text_from_strands_agent_response(response: AgentResult) -> str:
     return "\n".join(text_blocks).strip()
 
 
-class ElasticGumbyEndpointConfig:
+class TransformEndpointConfig:
     """
     Configuration utility for Elastic Gumby endpoints and region mappings.
     """
@@ -296,7 +296,7 @@ class ElasticGumbyEndpointConfig:
         Raises:
             ValueError: If the provided region is not supported
         """
-        airport_code = ElasticGumbyEndpointConfig.get_airport_code_for_region(region).lower()
+        airport_code = TransformEndpointConfig.get_airport_code_for_region(region).lower()
         return f"https://{airport_code}.{stage.lower()}.{component_name}.elastic-gumby.ai.aws.dev"
 
     @staticmethod
@@ -322,11 +322,11 @@ def build_agentic_api_endpoint_from_env():
         )
 
     if is_external_agentic_api_enabled():
-        return ElasticGumbyEndpointConfig.create_external_agenticapi_endpoint_url(
+        return TransformEndpointConfig.create_external_agenticapi_endpoint_url(
             str(os.getenv(ENV_KEY_STAGE)), str(os.getenv(ENV_KEY_AWS_REGION))
         )
 
-    return ElasticGumbyEndpointConfig.create_endpoint_url(
+    return TransformEndpointConfig.create_endpoint_url(
         str(os.getenv(ENV_KEY_STAGE)), str(os.getenv(ENV_KEY_AWS_REGION)), "agenticapi"
     )
 

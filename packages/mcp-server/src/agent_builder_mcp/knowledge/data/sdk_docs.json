@@ -220,7 +220,7 @@
     "file": "agent_builder_sdk/mcp_client_factory.py"
   },
   {
-    "name": "setup_eg_mcp_client",
+    "name": "setup_ab_mcp_client",
     "docstring": "Create and configure an EG MCP client using Strands framework.",
     "file": "agent_builder_sdk/mcp_client_factory.py"
   },
@@ -235,7 +235,7 @@
     "file": "agent_builder_sdk/cli.py"
   },
   {
-    "name": "setup_eg_mcp_client",
+    "name": "setup_ab_mcp_client",
     "docstring": "Set up and connect the MCP client using Strands framework.\n\nArgs:\n    mcp_args: Parsed command line arguments\n\nReturns:\n    Connected Strands MCP client",
     "file": "agent_builder_sdk/cli.py"
   },
@@ -305,7 +305,7 @@
     "file": "agent_builder_sdk/utils.py"
   },
   {
-    "name": "ElasticGumbyEndpointConfig",
+    "name": "TransformEndpointConfig",
     "docstring": "Configuration utility for Elastic Gumby endpoints and region mappings.",
     "file": "agent_builder_sdk/utils.py"
   },
