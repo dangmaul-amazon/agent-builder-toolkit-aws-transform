@@ -1,0 +1,41 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/packages/sdk"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "sdk"
+
+  - package-ecosystem: "pip"
+    directory: "/packages/mcp-server"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "mcp-server"
+
+  - package-ecosystem: "pip"
+    directory: "/packages/mcp-client"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "mcp-client"
+
+  - package-ecosystem: "pip"
+    directory: "/packages/types"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "types"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "ci"
