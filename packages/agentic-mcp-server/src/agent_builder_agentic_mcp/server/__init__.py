@@ -10,8 +10,9 @@ This package provides the core functionality for the MCP server.
 # First import the server to make mcp available
 from agent_builder_agentic_mcp.server._server import mcp
 
-# These imports are needed to register functions via decorators
-# even though they appear unused to static analysis
+# These imports register tool functions via decorators AND expose them in the server
+# namespace so that _advanced_tools can compose higher-level tools from them.
+# Wildcard imports are intentional here — __all__ in each module controls what's exported.
 from agent_builder_agentic_mcp.server._agent_instance_tools import *  # noqa: F401, F403
 from agent_builder_agentic_mcp.server._hitl_tools import *  # noqa: F401, F403
 from agent_builder_agentic_mcp.server._job_tools import *  # noqa: F401, F403

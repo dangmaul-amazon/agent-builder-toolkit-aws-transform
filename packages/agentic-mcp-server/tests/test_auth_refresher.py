@@ -6,6 +6,7 @@ Tests for the AuthTokenRefresher class.
 
 import datetime
 import os
+import sys
 from multiprocessing import Process
 from unittest import mock
 
@@ -77,6 +78,10 @@ def clear_cache():
     get_auth_token_refresher.cache_clear()
 
 
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="multiprocessing internals incompatible with builtins.open mock on 3.14+",
+)
 class TestAuthTokenRefresher:
     """Test suite for AuthTokenRefresher class."""
 
@@ -192,8 +197,6 @@ class TestAuthTokenRefresher:
         self, mock_client, mock_datetime_now, mock_environment, mock_open_file
     ):
         """Test error handling in token refresh method."""
-        # Arrange
-        mock_client_module, mock_client_instance = mock_client
 
         # Mock _refresh_auth_token_from_agentic_api to raise an exception
         with mock.patch(

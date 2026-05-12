@@ -4,7 +4,7 @@
 Main entry point for the package when run as a module.
 
 This allows the package to be run with:
-python -m -m agent_builder_agentic_mcp
+python -m agent_builder_agentic_mcp
 """
 
 import logging

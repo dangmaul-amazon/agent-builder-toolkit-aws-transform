@@ -1,5 +1,16 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
+__all__ = [
+    "create_artifact_upload_url",
+    "upload_artifact",
+    "complete_artifact_upload",
+    "create_artifact_download_url",
+    "download_artifact",
+    "list_artifacts",
+    "get_artifact_metadata",
+    "copy_artifact",
+]
+
 import json
 import logging
 import os
@@ -72,7 +83,7 @@ def _parse_s3_error(response_text: str) -> tuple:
         if root.tag == "Error":
             return root.findtext("Code"), root.findtext("Message", "")
     except ElementTree.ParseError:
-        pass
+        pass  # Non-XML response body; fall through to return (None, "")
     return None, ""
 
 

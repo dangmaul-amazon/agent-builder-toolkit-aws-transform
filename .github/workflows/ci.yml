@@ -105,4 +105,5 @@ jobs:
         run: |
           agent-builder-mcp --help
           agent-builder-agentic-mcp --help
+          python -m agent_builder_agentic_mcp --help
           agent-builder-sdk --help

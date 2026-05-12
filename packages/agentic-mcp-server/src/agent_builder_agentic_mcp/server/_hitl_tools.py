@@ -1,5 +1,13 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
+__all__ = [
+    "create_hitl_task",
+    "get_hitl_task",
+    "start_hitl_task",
+    "close_hitl_task",
+    "list_hitl_tasks",
+]
+
 import logging
 import uuid
 from typing import Any, Dict, Optional, TypedDict

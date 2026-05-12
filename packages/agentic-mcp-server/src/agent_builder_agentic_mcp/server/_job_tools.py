@@ -1,5 +1,16 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
+__all__ = [
+    "get_job",
+    "update_job_status",
+    "create_worklog",
+    "list_worklogs",
+    "put_job_plan",
+    "list_job_plan_steps",
+    "update_job_plan_step",
+    "delete_job_plan_step",
+]
+
 import logging
 import uuid
 from datetime import datetime

@@ -1,5 +1,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
+__all__ = ["retrieve_from_knowledge_base"]
+
 import logging
 from typing import Any, Dict, Literal
 

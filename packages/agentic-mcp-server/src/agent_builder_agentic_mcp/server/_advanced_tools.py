@@ -41,6 +41,16 @@ from agent_builder_agentic_mcp.server import (
 )
 from agent_builder_agentic_mcp.utils import dig
 
+__all__ = [
+    "download_artifact_to_string",
+    "retrieve_hitl_output_as_string",
+    "upload_artifact_from_string",
+    "create_hitl_task_with_json_input",
+    "create_s3_connector_hitl_task",
+    "create_autoform_hitl_task",
+    "create_autotable_hitl_task",
+]
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
